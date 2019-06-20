@@ -69,8 +69,9 @@ def hklToAngles_2plus2(hkl, E, alpha, U, B, mode):
     wavelength = 12.3984/E
     K = 2*np.pi/wavelength
     
-    Hw = U.dot(np.dot(B,hkl))
-    
+    UBH = U.dot(np.dot(B,hkl))
+    Q = np.linalg.norm(UBH)
+
     """Test for the direct beam """
     Uinv = np.linalg.inv(U)
     Binv = np.linalg.inv(B)
@@ -80,7 +81,7 @@ def hklToAngles_2plus2(hkl, E, alpha, U, B, mode):
     print("The reciprocal lattice vector parallel to the x-ray beam at omega = 0 is: [%.4f %.4f %.4f]" % (Y[0], Y[1], Y[2]))
     
     if mode == 1:
-        delta, gamma, omega, angout = diffAngles_mode1(Hw,K,alpha)
+        delta, gamma, omega, angout = diffAngles_mode1(UBH,K,alpha)
         
     tt = np.arccos( np.cos(gamma) * np.cos(delta) )
 
@@ -88,10 +89,9 @@ def hklToAngles_2plus2(hkl, E, alpha, U, B, mode):
     gamma=np.rad2deg(gamma)
     omega=np.rad2deg(omega)
     tt = np.rad2deg(tt)
-    angout=np.rad2deg(angout)
+    angout=np.rad2deg(angout)        
         
-        
-    return delta, gamma, omega, tt, angout
+    return delta, gamma, omega, tt, angout, Q
 
 
 
@@ -105,6 +105,7 @@ def hklToAngles_4C(hkl, N, E, U, B, mode, *args):
 
     UBH = U.dot(np.dot(B,hkl))
     UBN = U.dot(np.dot(B,N))
+    Q = np.linalg.norm(UBH)
     
     """ 2theta """
     dspacing = 2*np.pi/np.linalg.norm(B.dot(hkl))
@@ -151,7 +152,7 @@ def hklToAngles_4C(hkl, N, E, U, B, mode, *args):
         omega = np.arctan2( -R[1,2], -R[0,2] )
         theta = ttheta/2 + omega
         
-        return ttheta, theta, chi, phi, omega
+        return ttheta, theta, chi, phi, omega, Q
 
 
 
@@ -346,3 +347,17 @@ def main_4C(hkl, a, aa, N, E, *args):
     a,aa,b,ba = lengthAndAngles(a0,a1,a2)
     U,B = UBmat(a, aa, N)
     return hklToAngles_4C(hkl, N, E, U, B, 1, alp)
+
+
+def main_22C(hkl, a, aa, N, E, mode, *args):
+
+    alp = args[0]
+
+    wavelength = 12.3984/E
+    K = 2*np.pi/wavelength
+
+    a0,a1,a2 = vectorFromLengthAndAngles(a,aa)
+    a,aa,b,ba = lengthAndAngles(a0,a1,a2)
+    U,B = UBmat(a, aa, N)
+
+    return hklToAngles_2plus2(hkl, E, alp, U, B, mode)
