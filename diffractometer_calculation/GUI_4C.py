@@ -244,9 +244,12 @@ class MainWindow(QWidget):
             spinbox.setValue(value)
             spinbox.blockSignals(False)
 
-        for textbox, value in zip ((self.QQ), (Q)):
-            string = "{:.2f}".format(value)
-            textbox.setText(string)
+        # for textbox, value in zip ((self.QQ), (Q)):
+        #     string = "{:.2f}".format(value)
+        #     textbox.setText(string)
+
+        string = "{:.2f}".format(Q)
+        self.QQ.setText(string)
 
 
 
