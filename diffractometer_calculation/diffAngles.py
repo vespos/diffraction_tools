@@ -167,10 +167,16 @@ def hklToAngles_4C(hkl, N, E, U, B, mode, *args):
         Psi = rotation_matrix([1,0,0],psi)
         R = Psi@Tinv
 
-        chi = np.arctan2( np.sqrt(R[2,0]**2+R[2,1]**2), R[2,2] )
-        phi = np.arctan2( -R[2,1], R[2,0] )
-        omega = np.arctan2( -R[1,2], -R[0,2] )
+        chi = np.arctan2(np.sqrt(R[2,0]**2+R[2,1]**2), R[2,2])
+        phi = np.arctan2(-R[2,1], R[2,0])
+        omega = np.arctan2(-R[1,2], -R[0,2])
         theta = ttheta/2 + omega
+
+        ttheta = np.rad2deg(ttheta)
+        theta = np.rad2deg(theta)
+        chi = np.rad2deg(chi)
+        phi = np.rad2deg(phi)
+        omega = np.rad2deg(omega)
         
         return ttheta, theta, chi, phi, omega, Q
 

@@ -35,19 +35,19 @@ class MainWindow(QWidget):
 
 
         """------------------------- UPDATE FIELDS -------------------------"""
-        self.h.valueChanged.connect(self.update_GUI)
-        self.k.valueChanged.connect(self.update_GUI)
-        self.l.valueChanged.connect(self.update_GUI)
+        self.h.valueChanged.connect(self.update_angles)
+        self.k.valueChanged.connect(self.update_angles)
+        self.l.valueChanged.connect(self.update_angles)
 
-        self.a.valueChanged.connect(self.update_GUI)
-        self.b.valueChanged.connect(self.update_GUI)
-        self.c.valueChanged.connect(self.update_GUI)
-        self.aa.valueChanged.connect(self.update_GUI)
-        self.ba.valueChanged.connect(self.update_GUI)
-        self.ca.valueChanged.connect(self.update_GUI)
+        self.a.valueChanged.connect(self.update_angles)
+        self.b.valueChanged.connect(self.update_angles)
+        self.c.valueChanged.connect(self.update_angles)
+        self.aa.valueChanged.connect(self.update_angles)
+        self.ba.valueChanged.connect(self.update_angles)
+        self.ca.valueChanged.connect(self.update_angles)
 
-        self.E.valueChanged.connect(self.update_GUI)
-        self.alp.valueChanged.connect(self.update_GUI)
+        self.E.valueChanged.connect(self.update_angles)
+        self.alp.valueChanged.connect(self.update_angles)
 
         self.show()
 
@@ -180,29 +180,33 @@ class MainWindow(QWidget):
 
         ttheta_label = QLabel()
         ttheta_label.setText('2-theta')
-        self.ttheta = QLineEdit("ttheta")
-        self.ttheta.setReadOnly(True)
+        self.ttheta = QDoubleSpinBox()
+        self.ttheta.setRange(-360,360)
+        self.ttheta.setSingleStep(0.5)
         layout.addWidget(ttheta_label, 0, 0)
         layout.addWidget(self.ttheta, 0, 1)
 
         theta_label = QLabel()
         theta_label.setText('theta')
-        self.theta = QLineEdit("theta")
-        self.theta.setReadOnly(True)
+        self.theta = QDoubleSpinBox(self)
+        self.theta.setRange(-360,360)
+        self.theta.setSingleStep(0.5)
         layout.addWidget(theta_label, 1, 0)
         layout.addWidget(self.theta, 1, 1)
 
         chi_label = QLabel()
         chi_label.setText('chi')
-        self.chi = QLineEdit("chi")
-        self.chi.setReadOnly(True)
+        self.chi = QDoubleSpinBox(self)
+        self.chi.setRange(-360,360)
+        self.chi.setSingleStep(0.5)
         layout.addWidget(chi_label, 2, 0)
         layout.addWidget(self.chi, 2, 1)
 
         phi_label = QLabel()
         phi_label.setText('phi')
-        self.phi = QLineEdit("phi")
-        self.phi.setReadOnly(True)
+        self.phi = QDoubleSpinBox(self)
+        self.phi.setRange(-360,360)
+        self.phi.setSingleStep(0.5)
         layout.addWidget(phi_label, 3, 0)
         layout.addWidget(self.phi, 3, 1)
 
@@ -223,7 +227,7 @@ class MainWindow(QWidget):
         self.QQGroupBox.setLayout(layout)
 
 
-    def update_GUI(self):
+    def update_angles(self):
         # self.ttheta.setText( str(self.hbox.value()) )
         hkl = np.array([self.h.value(), self.k.value(), self.l.value()])
         N = np.array([self.Nh.value(), self.Nk.value(), self.Nl.value()])
@@ -235,16 +239,14 @@ class MainWindow(QWidget):
 
         ttheta, theta, chi, phi, omega, Q = fourC(hkl, a, aa, N, E, alp)
 
-        string = "{:.2f}".format(np.rad2deg(ttheta))
-        self.ttheta.setText(string)
-        string = "{:.2f}".format(np.rad2deg(theta))
-        self.theta.setText(string)
-        string = "{:.2f}".format(np.rad2deg(chi))
-        self.chi.setText(string)
-        string = "{:.2f}".format(np.rad2deg(phi))
-        self.phi.setText(string)
-        string = "{:.2f}".format(Q)
-        self.QQ.setText(string)
+        for spinbox, value in zip ((self.ttheta, self.theta, self.chi, self.phi), (ttheta, theta, chi, phi)):
+            spinbox.blockSignals(True)
+            spinbox.setValue(value)
+            spinbox.blockSignals(False)
+
+        for textbox, value in zip ((self.QQ), (Q)):
+            string = "{:.2f}".format(value)
+            textbox.setText(string)
 
 
 
