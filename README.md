@@ -7,6 +7,7 @@ Diffractometer calculation:
   Reverse calculation are only available for the 2+2 geometry at the moment.
   
   2+2C convention:
+  
     horizontal sample surface:
     
       gamma: righthanded
