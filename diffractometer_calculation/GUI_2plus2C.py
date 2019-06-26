@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+from PyQt5 import QtCore
 from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton, QDoubleSpinBox, QLineEdit, QLabel,
     QGroupBox, QHBoxLayout, QVBoxLayout, QGridLayout, QComboBox)
 import IPython
@@ -35,19 +36,25 @@ class MainWindow(QWidget):
 
 
         """------------------------- UPDATE FIELDS -------------------------"""
-        self.h.valueChanged.connect(self.update_GUI)
-        self.k.valueChanged.connect(self.update_GUI)
-        self.l.valueChanged.connect(self.update_GUI)
+        self.h.valueChanged.connect(self.update_angles)
+        self.k.valueChanged.connect(self.update_angles)
+        self.l.valueChanged.connect(self.update_angles)
 
-        self.a.valueChanged.connect(self.update_GUI)
-        self.b.valueChanged.connect(self.update_GUI)
-        self.c.valueChanged.connect(self.update_GUI)
-        self.aa.valueChanged.connect(self.update_GUI)
-        self.ba.valueChanged.connect(self.update_GUI)
-        self.ca.valueChanged.connect(self.update_GUI)
+        self.a.valueChanged.connect(self.update_angles)
+        self.b.valueChanged.connect(self.update_angles)
+        self.c.valueChanged.connect(self.update_angles)
+        self.aa.valueChanged.connect(self.update_angles)
+        self.ba.valueChanged.connect(self.update_angles)
+        self.ca.valueChanged.connect(self.update_angles)
 
-        self.E.valueChanged.connect(self.update_GUI)
-        self.alp.valueChanged.connect(self.update_GUI)
+        self.E.valueChanged.connect(self.update_angles)
+        self.alp.valueChanged.connect(self.update_angles)
+        
+
+        self.gamma.valueChanged.connect(self.update_hkl)
+        self.delta.valueChanged.connect(self.update_hkl)
+        self.omega.valueChanged.connect(self.update_hkl)
+        self.alpha.valueChanged.connect(self.update_hkl)
 
         self.show()
 
@@ -175,8 +182,8 @@ class MainWindow(QWidget):
         mode_label.setText('Mode')
         self.modeCombo = QComboBox(self)
         self.modeCombo.addItem("H, fixed incident")
-        self.modeCombo.addItem("H, symmetric")
         self.modeCombo.addItem("V, fixed incident")
+        self.modeCombo.addItem("H, symmetric")
         self.modeCombo.addItem("V, symmetric")
         layout.addWidget(mode_label, 2, 0)
         layout.addWidget(self.modeCombo, 2, 1)
@@ -215,7 +222,7 @@ class MainWindow(QWidget):
         omega_label.setText('omega')
         self.omega = QDoubleSpinBox(self)
         self.omega.setRange(-360,360)
-        self.omega.setSingleStep(0.1)
+        self.omega.setSingleStep(0.5)
         layout.addWidget(omega_label, 3, 0)
         layout.addWidget(self.omega, 3, 1)
 
@@ -256,12 +263,14 @@ class MainWindow(QWidget):
 
         if modeTxt == 'H, fixed incident':
             mode = 1
+        elif modeTxt == 'V, fixed incident':
+            mode = 2
 
         return mode
 
 
-    def update_GUI(self):
-        # self.ttheta.setText( str(self.hbox.value()) )
+    @QtCore.pyqtSlot()
+    def update_angles(self):
         hkl = np.array([self.h.value(), self.k.value(), self.l.value()])
         N = np.array([self.Nh.value(), self.Nk.value(), self.Nl.value()])
         a = np.array([self.a.value(), self.b.value(), self.c.value()])
@@ -276,15 +285,40 @@ class MainWindow(QWidget):
 
         # IPython.embed()
 
-        self.gamma.setValue(gamma)
-        self.delta.setValue(delta)
-        self.omega.setValue(omega)
-        string = "{:.2f}".format(tt)
-        self.ttheta.setText(string)
-        string = "{:.2f}".format(angout)
-        self.ttheta.setText(string)
-        string = "{:.2f}".format(Q)
-        self.QQ.setText(string)
+        for spinbox, value in zip ((self.gamma, self.delta, self.omega, self.alpha), (gamma, delta, omega, alp)):
+            spinbox.blockSignals(True)
+            spinbox.setValue(value)
+            spinbox.blockSignals(False)
+        
+        for textbox, value in zip ((self.ttheta, self.angout, self.QQ), (tt, angout, Q)):
+            string = "{:.2f}".format(value)
+            textbox.setText(string)
+
+
+    @QtCore.pyqtSlot()
+    def update_hkl(self):
+        delta = self.delta.value()
+        gamma = self.gamma.value()
+        omega = self.omega.value()
+        alpha = self.alpha.value()
+        N = np.array([self.Nh.value(), self.Nk.value(), self.Nl.value()])
+        a = np.array([self.a.value(), self.b.value(), self.c.value()])
+        aa = np.array([self.aa.value(), self.ba.value(), self.ca.value()])
+
+        E = self.E.value()
+
+        mode = self.modeComboActivated()
+
+        hkl, Q, tt = twoPlusTwoC_hkl(E, delta, gamma, omega, alpha, a, aa, N, mode)
+
+        for spinbox, value in zip ((self.h, self.k, self.l), (hkl[0], hkl[1], hkl[2])):
+            spinbox.blockSignals(True)
+            spinbox.setValue(value)
+            spinbox.blockSignals(False)
+
+        for textbox, value in zip ((self.ttheta, self.QQ), (tt, Q)):
+            string = "{:.2f}".format(value)
+            textbox.setText(string)
 
 
 
@@ -292,10 +326,13 @@ def fourC(hkl, a, aa, N, E, *args):
     """ args[0]: incident angle """
     return diff.main_22C(hkl, a, aa, N, E, mode, *args)
 
-
 def twoPlusTwoC(hkl, a, aa, N, E, mode, *args):
     """ args[0]: incident angle """
     return diff.main_22C(hkl, a, aa, N, E, mode, *args)
+
+def twoPlusTwoC_hkl(E, delta, gamma, omega, alpha, a, aa, N, mode, *args):
+    return diff.main_22C_hkl(E, delta, gamma, omega, alpha, a, aa, N, mode, *args)
+
 
 
 if __name__ == '__main__':

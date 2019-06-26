@@ -149,6 +149,7 @@ class MainWindow(QWidget):
         layout.addWidget(anglesGroupBox)
         self.latticeGroupBox.setLayout(layout)
 
+
     def create_OtherGroupbox(self):
         self.OtherGroupBox = QGroupBox("Other parameters")
         layout = QGridLayout()

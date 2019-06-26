@@ -1,45 +1,61 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri May 31 10:44:28 2019
-
-@author: espov
-"""
-
 import numpy as np
 import IPython
 
 
 """ -------------------- Diffractometer Calculations Master Functions -------------------- """
 
-def hklFromAngles_2plus2(E, delta, gamma, omega, alpha, U, B):
+def hklFromAngles_2plus2(E, delta, gamma, omega, alpha, U, B, mode=1):
     """
-    Calculate the hkl vector for a given set of angles. For horizontal geometry
+    Calculate the hkl vector for a given set of angles.
+    mode 1,3,5: horizontal, fixed incident angle
+    mode 2,4,6: vertical, fixed incident angle
     """
     
     wavelength = 12.3984/E
     K = 2*np.pi/wavelength
     
     delta = np.deg2rad(delta)
-    gamma = -np.deg2rad(gamma) #sign convention
+    gamma = np.deg2rad(gamma)
     omega = np.deg2rad(omega)
     alpha = np.deg2rad(alpha)
     
     """rotation matrices"""
-    Delta = np.array([[1, 0, 0],
-                      [0, np.cos(delta), -np.sin(delta)],
-                      [0, np.sin(delta), np.cos(delta)]])
+    if mode==1 or mode==3 or mode==5: # sample surface horizontal
+        gamma = -gamma # sign convention for modes 1,3 and 5
+        Delta = np.array([[1, 0, 0],
+                        [0, np.cos(delta), -np.sin(delta)],
+                        [0, np.sin(delta), np.cos(delta)]])
 
-    Gamma = np.array([[np.cos(gamma), -np.sin(gamma), 0],
-                      [np.sin(gamma), np.cos(gamma), 0],
-                      [0, 0, 1]])
-    
-    Omega = np.array([[np.cos(omega), -np.sin(omega), 0],
-                      [np.sin(omega), np.cos(omega), 0],
-                      [0, 0, 1]])
-    
-    Alpha = np.array([[1, 0, 0],
-                      [0, np.cos(alpha), -np.sin(alpha)],
-                      [0, np.sin(alpha), np.cos(alpha)]])
+        Gamma = np.array([[np.cos(gamma), -np.sin(gamma), 0],
+                        [np.sin(gamma), np.cos(gamma), 0],
+                        [0, 0, 1]])
+        
+        Omega = np.array([[np.cos(omega), -np.sin(omega), 0],
+                        [np.sin(omega), np.cos(omega), 0],
+                        [0, 0, 1]])
+        
+        Alpha = np.array([[1, 0, 0],
+                        [0, np.cos(alpha), -np.sin(alpha)],
+                        [0, np.sin(alpha), np.cos(alpha)]])
+
+
+    elif mode==2 or mode==4 or mode==6: # sample surface vertical
+        Delta = np.array([[np.cos(delta), np.sin(delta), 0],
+                        [-np.sin(delta), np.cos(delta), 0],
+                        [0, 0, 1]])
+
+        Gamma = np.array([[1, 0, 0],
+                        [0, np.cos(gamma), -np.sin(gamma)],
+                        [0, np.sin(gamma), np.cos(gamma)]])
+
+        Omega = np.array([[np.cos(omega), np.sin(omega), 0],
+                        [-np.sin(omega), np.cos(omega), 0],
+                        [0, 0, 1]])
+
+        Alpha = np.array([[1, 0, 0],
+                        [0, np.cos(alpha), -np.sin(alpha)],
+                        [0, np.sin(alpha), np.cos(alpha)]])
+
     
     """ calculate H """
     UBH = np.dot(Gamma, Delta) - np.identity(3)
@@ -54,16 +70,18 @@ def hklFromAngles_2plus2(E, delta, gamma, omega, alpha, U, B):
     H = np.dot(Binv, H)
     
     Q = np.linalg.norm(UBH)
+    tt = np.rad2deg(np.arccos( np.cos(-gamma) * np.cos(delta) ))
     
-    return H, Q
+    return H, Q, tt
 
 
 
 
-def hklToAngles_2plus2(hkl, E, alpha, U, B, mode):
+def hklToAngles_2plus2(hkl, E, alpha, U, B, mode=1):
     """
     Calculates the diffractometer angles for a given crystal (UB mat) and hkl
     mode 1: horizontal, fixed incident angle
+    mode 2: vertical, fixed incident angle
     """
     
     wavelength = 12.3984/E
@@ -82,6 +100,8 @@ def hklToAngles_2plus2(hkl, E, alpha, U, B, mode):
     
     if mode == 1:
         delta, gamma, omega, angout = diffAngles_mode1(UBH,K,alpha)
+    elif mode == 2:
+        delta, gamma, omega, angout = diffAngles_mode2(UBH,K,alpha)
         
     tt = np.arccos( np.cos(gamma) * np.cos(delta) )
 
@@ -89,7 +109,7 @@ def hklToAngles_2plus2(hkl, E, alpha, U, B, mode):
     gamma=np.rad2deg(gamma)
     omega=np.rad2deg(omega)
     tt = np.rad2deg(tt)
-    angout=np.rad2deg(angout)        
+    angout=np.rad2deg(angout)
         
     return delta, gamma, omega, tt, angout, Q
 
@@ -313,16 +333,13 @@ def diffAngles_mode1(H,K,alpha):
     
     alpha=np.deg2rad(alpha)
 
-#    h = H[0,:]/K
-#    k = H[1,:]/K
-#    l = H[2,:]/K
     h = H[0]/K
     k = H[1]/K
     l = H[2]/K
     
     Y = -.5*(h**2+k**2+l**2)
     Z = (l+np.sin(alpha)*Y)/np.cos(alpha)
-    X = np.sqrt( h**2+k**2 - (np.cos(alpha)*Y+np.sin(alpha)*Z)**2 ) # Change sign here to do gamma positive (and also in line 53)
+    X = np.sqrt( h**2+k**2 - (np.cos(alpha)*Y+np.sin(alpha)*Z)**2 ) # Sign is +/-, but + gives positive delta.
     W = np.cos(alpha)*Y+np.sin(alpha)*Z
     
     gamma = -np.arctan2(-X,Y+1)
@@ -334,8 +351,50 @@ def diffAngles_mode1(H,K,alpha):
 
 
 
+def diffAngles_mode2(H,K,alpha):
+    """
+    mode 2: vertical geometry, fixed incident angle
+    inputs:
+        H: orthonormalized hkl
+        K: wavevector
+        alpha: incident angle
+        
+    outputs:
+        delta, gamma, omega: diffractometer angles
+        angOut: outgoing angle
+        
+        
+    based on Simon's code
+    """
+    
+    alpha=np.deg2rad(alpha)
 
-"""------------ master functions for the GUI ------------"""
+    h = H[0]/K
+    k = H[1]/K
+    l = H[2]/K
+
+    Y = -.5*(h**2+k**2+l**2)
+    Z = (l+np.sin(alpha)*Y)/np.cos(alpha)
+    X = np.sqrt( h**2+k**2 - (np.cos(alpha)*Y+np.sin(alpha)*Z)**2 ) # Sign is +/-, but + gives positive delta.
+    W = np.cos(alpha)*Y+np.sin(alpha)*Z
+
+    omega = np.arctan2(k*X-h*W, h*X+k*W)
+    delta = np.arcsin(X)
+    gamma = np.arctan2(Z, Y+1)
+    angOut = np.arcsin(l-np.sin(alpha))
+
+    return delta, gamma, omega, angOut
+
+
+
+
+
+
+
+
+
+
+"""------------ interface functions for the GUI ------------"""
 def main_4C(hkl, a, aa, N, E, *args):
 
     alp = args[0]
@@ -361,3 +420,13 @@ def main_22C(hkl, a, aa, N, E, mode, *args):
     U,B = UBmat(a, aa, N)
 
     return hklToAngles_2plus2(hkl, E, alp, U, B, mode)
+
+
+def main_22C_hkl(E, delta, gamma, omega, alpha, a, aa, N, mode, *args):
+    wavelength = 12.3984/E
+    K = 2*np.pi/wavelength
+
+    a0,a1,a2 = vectorFromLengthAndAngles(a,aa)
+    a,aa,b,ba = lengthAndAngles(a0,a1,a2)
+    U,B = UBmat(a, aa, N)
+    return hklFromAngles_2plus2(E, delta, gamma, omega, alpha, U, B, mode)
