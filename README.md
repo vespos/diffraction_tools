@@ -9,14 +9,12 @@ Diffractometer calculation:
   2+2C convention:
   
     horizontal sample surface:
-    
       gamma: righthanded
       delta: righthanded
       omega: righthanded
       alpha: righthanded
     
     vertical sample surface:
-    
       gamma: righthanded
       delta: lefthanded
       omega: lefthanded
