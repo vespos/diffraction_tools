@@ -1,4 +1,4 @@
-# x-ray_utilities
+# Diffractometer calculation
 tools for x-ray experiment
 
 Diffractometer calculation:
