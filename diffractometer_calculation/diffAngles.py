@@ -1,3 +1,4 @@
+__author__ = "VEsp"
 import numpy as np
 import IPython
 
@@ -119,9 +120,8 @@ def hklToAngles_2plus2(hkl, E, alpha, U, B, mode=1):
 def hklToAngles_4C(hkl, N, E, U, B, mode, *args):
     wavelength = 12.3984/E
 
-    if mode==1:
+    if mode==2:
         alp = np.deg2rad(args[0])
-        # print('\n/!\\ /!\\ /!\\ The input incident angle is assumed to be in degrees. /!\\ /!\\ /!\\  \n')
 
     UBH = U.dot(np.dot(B,hkl))
     UBN = U.dot(np.dot(B,N))
@@ -132,6 +132,12 @@ def hklToAngles_4C(hkl, N, E, U, B, mode, *args):
     ttheta = np.arcsin(wavelength / (2*dspacing))*2
 
     if mode==1:
+        theta = ttheta/2
+        phi = np.arctan2(UBH[1],-UBH[0])
+        chi = np.arctan2(UBH[2], np.sqrt(UBH[0]**2+UBH[1]**2))
+        omega = 0
+
+    elif mode==2:
         """ fixed incident angle """
         """ (I) find azimuthale angle for fixed alpha from Mochrie """ 
         """ (i) find N component parallel and perpendicular to hkl """
@@ -172,13 +178,13 @@ def hklToAngles_4C(hkl, N, E, U, B, mode, *args):
         omega = np.arctan2(-R[1,2], -R[0,2])
         theta = ttheta/2 + omega
 
-        ttheta = np.rad2deg(ttheta)
-        theta = np.rad2deg(theta)
-        chi = np.rad2deg(chi)
-        phi = np.rad2deg(phi)
-        omega = np.rad2deg(omega)
+    ttheta = np.rad2deg(ttheta)
+    theta = np.rad2deg(theta)
+    chi = np.rad2deg(chi)
+    phi = np.rad2deg(phi)
+    omega = np.rad2deg(omega)
         
-        return ttheta, theta, chi, phi, omega, Q
+    return ttheta, theta, chi, phi, omega, Q
 
 
 
@@ -305,7 +311,7 @@ def ortho_recip(H,a,aa,b,ba):
     B       : The orthonomalization matrix.
     H      : [hw;kw;lw] reciprocal lattice vector in original coordiante
             system.
-    a,aa,b,ba: Output of lengthAndAngles.m.
+    a,aa,b,ba: Output of lengthAndAngles
     """
 
     ba = np.deg2rad(ba)
@@ -401,7 +407,7 @@ def diffAngles_mode2(H,K,alpha):
 
 
 """------------ interface functions for the GUI ------------"""
-def main_4C(hkl, a, aa, N, E, *args):
+def main_4C(hkl, a, aa, N, E, mode, *args):
 
     alp = args[0]
 
@@ -411,7 +417,7 @@ def main_4C(hkl, a, aa, N, E, *args):
     a0,a1,a2 = vectorFromLengthAndAngles(a,aa)
     a,aa,b,ba = lengthAndAngles(a0,a1,a2)
     U,B = UBmat(a, aa, N)
-    return hklToAngles_4C(hkl, N, E, U, B, 1, alp)
+    return hklToAngles_4C(hkl, N, E, U, B, mode, alp)
 
 
 def main_22C(hkl, a, aa, N, E, mode, *args):

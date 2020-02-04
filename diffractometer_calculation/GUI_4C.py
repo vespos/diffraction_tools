@@ -1,7 +1,9 @@
+__author__ = "VEsp"
 import sys
 import numpy as np
+from PyQt5 import QtCore
 from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton, QDoubleSpinBox, QLineEdit, QLabel,
-    QGroupBox, QHBoxLayout, QVBoxLayout, QGridLayout)
+    QGroupBox, QHBoxLayout, QVBoxLayout, QGridLayout, QComboBox)
 import IPython
 
 import diffAngles as diff
@@ -108,7 +110,7 @@ class MainWindow(QWidget):
 
 
     def create_latticeGroupBox(self):
-        abcGroupBox = QGroupBox("a,b,c")
+        abcGroupBox = QGroupBox("a,b,c (nm)")
         self.a = QDoubleSpinBox(self)
         self.a.setRange(0,100)
         self.a.setSingleStep(0.01)
@@ -124,7 +126,7 @@ class MainWindow(QWidget):
         layout.addWidget(self.c)
         abcGroupBox.setLayout(layout)
 
-        anglesGroupBox = QGroupBox("alpha,beta,gamma")
+        anglesGroupBox = QGroupBox("alpha,beta,gamma (degrees)")
         self.aa = QDoubleSpinBox(self)
         self.aa.setRange(0,180)
         self.aa.setSingleStep(1)
@@ -170,6 +172,14 @@ class MainWindow(QWidget):
         self.alp.setSingleStep(0.1)
         layout.addWidget(alp_label, 1, 0)
         layout.addWidget(self.alp, 1, 1)
+
+        mode_label = QLabel()
+        mode_label.setText('Mode')
+        self.modeCombo = QComboBox(self)
+        self.modeCombo.addItem("Symmetric")
+        self.modeCombo.addItem("Fixed incident angle")
+        layout.addWidget(mode_label, 2, 0)
+        layout.addWidget(self.modeCombo, 2, 1)
 
         self.OtherGroupBox.setLayout(layout)
 
@@ -227,6 +237,18 @@ class MainWindow(QWidget):
         self.QQGroupBox.setLayout(layout)
 
 
+    def modeComboActivated(self):
+        modeTxt = self.modeCombo.currentText()
+
+        if modeTxt == 'Symmetric':
+            mode = 1
+        elif modeTxt == 'Fixed incident angle':
+            mode = 2
+
+        return mode
+
+
+    @QtCore.pyqtSlot()
     def update_angles(self):
         # self.ttheta.setText( str(self.hbox.value()) )
         hkl = np.array([self.h.value(), self.k.value(), self.l.value()])
@@ -237,7 +259,9 @@ class MainWindow(QWidget):
         alp = self.alp.value()
         E = self.E.value()
 
-        ttheta, theta, chi, phi, omega, Q = fourC(hkl, a, aa, N, E, alp)
+        mode = self.modeComboActivated()
+
+        ttheta, theta, chi, phi, omega, Q = fourC(hkl, a, aa, N, E, mode, alp)
 
         for spinbox, value in zip ((self.ttheta, self.theta, self.chi, self.phi), (ttheta, theta, chi, phi)):
             spinbox.blockSignals(True)
@@ -253,9 +277,9 @@ class MainWindow(QWidget):
 
 
 
-def fourC(hkl, a, aa, N, E, *args):
+def fourC(hkl, a, aa, N, E, mode, *args):
     """ args[0]: incident angle """
-    return diff.main_4C(hkl, a, aa, N, E, *args)
+    return diff.main_4C(hkl, a, aa, N, E, mode, *args)
 
 
 if __name__ == '__main__':

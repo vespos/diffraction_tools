@@ -1,3 +1,4 @@
+__author__ = "VEsp"
 import sys
 import numpy as np
 from PyQt5 import QtCore
@@ -115,7 +116,7 @@ class MainWindow(QWidget):
 
 
     def create_latticeGroupBox(self):
-        abcGroupBox = QGroupBox("a,b,c")
+        abcGroupBox = QGroupBox("a,b,c (nm)")
         self.a = QDoubleSpinBox(self)
         self.a.setRange(0,100)
         self.a.setSingleStep(0.01)
@@ -131,7 +132,7 @@ class MainWindow(QWidget):
         layout.addWidget(self.c)
         abcGroupBox.setLayout(layout)
 
-        latticeAnglesGroupBox = QGroupBox("alpha,beta,gamma")
+        latticeAnglesGroupBox = QGroupBox("alpha,beta,gamma (degrees)")
         self.aa = QDoubleSpinBox(self)
         self.aa.setRange(0,180)
         self.aa.setSingleStep(1)
